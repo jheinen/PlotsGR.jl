@@ -1,5 +1,9 @@
+__precompile__(true)
+
 module PlotsGR
 
-# package code goes here
+include("init.jl")
+include("backend.jl")
+include("output.jl")
 
 end # module
