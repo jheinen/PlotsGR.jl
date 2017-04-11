@@ -222,7 +222,8 @@ end
 # draw ONE symbol marker
 function gr_draw_marker(xi, yi, msize::Number, shape::Symbol)
     GR.setmarkertype(gr_markertype[shape])
-    GR.setmarkersize(0.3msize)
+    w, h = gr_plot_size
+    GR.setmarkersize(0.3msize / ((w + h) * 0.001))
     GR.polymarker([xi], [yi])
 end
 
@@ -269,9 +270,10 @@ end
 
 # ---------------------------------------------------------
 
-function gr_set_line(w, style, c) #, a)
+function gr_set_line(lw, style, c) #, a)
     GR.setlinetype(gr_linetype[style])
-    GR.setlinewidth(w)
+    w, h = gr_plot_size
+    GR.setlinewidth(max(1, lw / ((w + h) * 0.001)))
     gr_set_linecolor(c) #, a)
 end
 
@@ -360,7 +362,7 @@ end
 function gr_colorbar(sp::Subplot)
     if sp[:colorbar] != :none
         gr_set_viewport_cmap(sp)
-        GR.colormap()
+        GR.colorbar()
         gr_set_viewport_plotarea()
     end
 end
@@ -592,6 +594,7 @@ function gr_display(sp::Subplot{GRBackend}, w, h, viewport_canvas)
             flip = sp[:yaxis][:flip]
             mirror = sp[:xaxis][:mirror]
             gr_set_font(sp[:xaxis][:tickfont],
+                        halign = (:left, :hcenter, :right)[sign(sp[:xaxis][:rotation]) + 2],
                         valign = (mirror ? :bottom : :top),
                         color = sp[:xaxis][:foreground_color_axis],
                         rotation = sp[:xaxis][:rotation])
@@ -608,6 +611,7 @@ function gr_display(sp::Subplot{GRBackend}, w, h, viewport_canvas)
             mirror = sp[:yaxis][:mirror]
             gr_set_font(sp[:yaxis][:tickfont],
                         halign = (mirror ? :left : :right),
+                        valign = (:top, :vcenter, :bottom)[sign(sp[:yaxis][:rotation]) + 2],
                         color = sp[:yaxis][:foreground_color_axis],
                         rotation = sp[:yaxis][:rotation])
             for (cv, dv) in zip(yticks...)
@@ -879,7 +883,7 @@ function gr_display(sp::Subplot{GRBackend}, w, h, viewport_canvas)
 
         elseif st == :image
             z = transpose_z(series, series[:z].surf, true)
-            h, w = size(z)
+            w, h = size(z)
             if eltype(z) <: Colors.AbstractGray
                 grey = round(UInt8, float(z) * 255)
                 rgba = map(c -> UInt32( 0xff000000 + Int(c)<<16 + Int(c)<<8 + Int(c) ), grey)
@@ -952,7 +956,7 @@ function gr_display(sp::Subplot{GRBackend}, w, h, viewport_canvas)
                 end
 
                 if series[:markershape] != :none
-                    gr_draw_markers(series, xpos-[0.06,0.02], [ypos,ypos], 10, nothing)
+                    gr_draw_markers(series, xpos-[0.06,0.02], [ypos,ypos], 6, nothing)
                 end
 
                 if typeof(series[:label]) <: Array
